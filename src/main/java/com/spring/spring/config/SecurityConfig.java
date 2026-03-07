@@ -73,9 +73,9 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         // ✅ 1. ROUTES PUBLICLES SPÉCIFIQUES (DONS)
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/dons/intention").permitAll()
                         .requestMatchers("/api/dons/confirmation/**").permitAll()
-                        .requestMatchers("/uploads/**").permitAll()
 
                         // ✅ 2. ROUTES D'AUTHENTIFICATION PUBLIQUES
                         .requestMatchers("/api/auth/login").permitAll()
