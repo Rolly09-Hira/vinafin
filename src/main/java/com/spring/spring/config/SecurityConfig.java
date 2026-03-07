@@ -67,9 +67,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(false)
+                    .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                    .maximumSessions(1)
+                    .maxSessionsPreventsLogin(false)
+                    .and()
+                    .sessionFixation().migrateSession()  // ← protège contre le vol de session
                 )
                 .authorizeHttpRequests(auth -> auth
                     // ✅ 1. ROUTES PUBLIQUES LES PLUS SPÉCIFIQUES (UPLOADS)
