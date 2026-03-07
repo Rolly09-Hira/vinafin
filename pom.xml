@@ -79,6 +79,12 @@
 	</dependencies>
 
 	<build>
+		<resources>
+		    <resource>
+		        <directory>uploads</directory>
+		        <targetPath>uploads</targetPath>
+		    </resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
