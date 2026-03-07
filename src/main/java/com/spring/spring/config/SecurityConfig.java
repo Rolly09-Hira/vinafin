@@ -74,7 +74,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                     // ✅ 1. ROUTES PUBLIQUES LES PLUS SPÉCIFIQUES (UPLOADS)
                     .requestMatchers("/uploads/**").permitAll()
+                    .requestMatchers("/uploads/**").anonymous()
                     .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/uploads/**").anonymous()
                 
                     // ✅ 2. AUTRES ROUTES PUBLIQUES SPÉCIFIQUES
                     .requestMatchers(HttpMethod.POST, "/api/dons/intention").permitAll()
