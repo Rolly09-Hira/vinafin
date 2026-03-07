@@ -7,7 +7,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/debug")
 public class DebugController {
-
+    
     @GetMapping("/files")
     public Map<String, Object> listFiles() {
         Map<String, Object> result = new HashMap<>();
@@ -36,6 +36,15 @@ public class DebugController {
         result.put("uploadsCheck", uploadsCheck);
 
         return result;
+    }
+    @GetMapping("/files/{dir}")
+    public List<String> listFilesInSpecificDir(@PathVariable String dir) {
+        File directory = new File("uploads/" + dir);
+        if (!directory.exists() || !directory.isDirectory()) {
+            return Arrays.asList("Dossier introuvable : uploads/" + dir);
+        }
+        String[] files = directory.list();
+        return files != null ? Arrays.asList(files) : new ArrayList<>();
     }
 
     private List<String> listFilesInDir(File dir) {
