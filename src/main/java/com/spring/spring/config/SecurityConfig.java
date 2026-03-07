@@ -72,40 +72,44 @@ public class SecurityConfig {
                         .maxSessionsPreventsLogin(false)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ 1. ROUTES PUBLICLES SPÉCIFIQUES (DONS)
-                        .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/dons/intention").permitAll()
-                        .requestMatchers("/api/dons/confirmation/**").permitAll()
-
-                        // ✅ 2. ROUTES D'AUTHENTIFICATION PUBLIQUES
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/logout").permitAll()
-                        .requestMatchers("/api/auth/check").permitAll()
-                        .requestMatchers("/api/auth/check-session").permitAll()
-                        .requestMatchers("/api/auth/test-login").permitAll()
-
-                        // ✅ 3. ROUTES GET PUBLIQUES (tout le monde peut lire)
-                        .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
-
-                        // ✅ 4. ROUTES ADMIN SPÉCIFIQUES
-                        .requestMatchers("/api/admin/dons/**").hasAnyRole("ADMIN", "EDITEUR")
-                        .requestMatchers("/api/auth/register").hasRole("ADMIN")
-                        .requestMatchers("/api/auth/users/**").hasRole("ADMIN")
-
-                        // ✅ 5. ROUTES AUTHENTIFIÉES (utilisateurs connectés)
-                        .requestMatchers("/api/auth/change-password").authenticated()
-                        .requestMatchers("/api/auth/me").authenticated()
-                        .requestMatchers("/api/auth/profile").authenticated()
-
-                        // ✅ 6. ROUTES PROTÉGÉES (POST/PUT/DELETE)
-                        .requestMatchers(HttpMethod.POST, "/api/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/api/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
-
-                        // ✅ 7. TOUT LE RESTE NÉCESSITE AUTH
-                        .anyRequest().authenticated()
+                    // ✅ 1. ROUTES PUBLIQUES LES PLUS SPÉCIFIQUES (UPLOADS)
+                    .requestMatchers("/uploads/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                
+                    // ✅ 2. AUTRES ROUTES PUBLIQUES SPÉCIFIQUES
+                    .requestMatchers(HttpMethod.POST, "/api/dons/intention").permitAll()
+                    .requestMatchers("/api/dons/confirmation/**").permitAll()
+                
+                    // ✅ 3. ROUTES D'AUTHENTIFICATION PUBLIQUES
+                    .requestMatchers("/api/auth/login").permitAll()
+                    .requestMatchers("/api/auth/logout").permitAll()
+                    .requestMatchers("/api/auth/check").permitAll()
+                    .requestMatchers("/api/auth/check-session").permitAll()
+                    .requestMatchers("/api/auth/test-login").permitAll()
+                
+                    // ✅ 4. ROUTES GET PUBLIQUES (API)
+                    .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
+                
+                    // ✅ 5. ROUTES ADMIN SPÉCIFIQUES
+                    .requestMatchers("/api/admin/dons/**").hasAnyRole("ADMIN", "EDITEUR")
+                    .requestMatchers("/api/auth/register").hasRole("ADMIN")
+                    .requestMatchers("/api/auth/users/**").hasRole("ADMIN")
+                
+                    // ✅ 6. ROUTES AUTHENTIFIÉES (utilisateurs connectés)
+                    .requestMatchers("/api/auth/change-password").authenticated()
+                    .requestMatchers("/api/auth/me").authenticated()
+                    .requestMatchers("/api/auth/profile").authenticated()
+                
+                    // ✅ 7. ROUTES PROTÉGÉES (POST/PUT/DELETE)
+                    .requestMatchers(HttpMethod.POST, "/api/**").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
+                    .requestMatchers(HttpMethod.PATCH, "/api/**").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
+                
+                    // ✅ 8. TOUT LE RESTE NÉCESSITE AUTH
+                    .anyRequest().authenticated()
                 )
+
                 .formLogin(form -> form
                         .loginProcessingUrl("/api/auth/login")
                         .usernameParameter("email")
