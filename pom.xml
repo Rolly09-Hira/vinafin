@@ -94,10 +94,10 @@
             </resource>
             
             <!-- Les images uploads sont copiées dans target/classes/static/uploads -->
-            <resource>
+            <!-- <resource>
                 <directory>uploads</directory>
                 <targetPath>static/uploads</targetPath>
-            </resource>
+            </resource> -->
         </resources>
 
         <plugins>
