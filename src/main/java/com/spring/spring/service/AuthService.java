@@ -21,7 +21,7 @@ public class AuthService {
     private BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private CloudinaryStorageService cloudinaryStorageService; // CHANGÉ
 
     @Transactional
     public Utilisateur creerUtilisateur(UtilisateurRequestDTO dto) {
@@ -40,7 +40,8 @@ public class AuthService {
 
         // Gérer l'upload de la photo si présente
         if (dto.getPhotoFile() != null && !dto.getPhotoFile().isEmpty()) {
-            String photoUrl = fileStorageService.storeProfilePhoto(dto.getPhotoFile());
+            // CHANGÉ: utilisation de uploadImage() au lieu de storeProfilePhoto()
+            String photoUrl = cloudinaryStorageService.uploadImage(dto.getPhotoFile(), "utilisateur");
             utilisateur.setPhotoUrl(photoUrl);
         }
 
@@ -51,8 +52,6 @@ public class AuthService {
     public Utilisateur updateUserWithPhoto(Long id, String nom, String email, String role, Boolean actif, MultipartFile photoFile) {
         Utilisateur utilisateur = utilisateurRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-
-        String oldEmail = utilisateur.getEmail();
 
         if (nom != null && !nom.trim().isEmpty()) {
             utilisateur.setNom(nom.trim());
@@ -77,9 +76,13 @@ public class AuthService {
         if (photoFile != null && !photoFile.isEmpty()) {
             // Supprimer l'ancienne photo si elle existe
             if (utilisateur.getPhotoUrl() != null && !utilisateur.getPhotoUrl().isEmpty()) {
-                fileStorageService.deleteFile(utilisateur.getPhotoUrl());
+                String oldPublicId = cloudinaryStorageService.extractPublicIdFromUrl(utilisateur.getPhotoUrl());
+                if (oldPublicId != null) {
+                    cloudinaryStorageService.deleteFile(oldPublicId);
+                }
             }
-            String newPhotoUrl = fileStorageService.storeProfilePhoto(photoFile);
+            // CHANGÉ: utilisation de uploadImage()
+            String newPhotoUrl = cloudinaryStorageService.uploadImage(photoFile, "utilisateur");
             utilisateur.setPhotoUrl(newPhotoUrl);
         }
 
@@ -129,9 +132,13 @@ public class AuthService {
         if (photoFile != null && !photoFile.isEmpty()) {
             // Supprimer l'ancienne photo si elle existe
             if (utilisateur.getPhotoUrl() != null) {
-                fileStorageService.deleteFile(utilisateur.getPhotoUrl());
+                String oldPublicId = cloudinaryStorageService.extractPublicIdFromUrl(utilisateur.getPhotoUrl());
+                if (oldPublicId != null) {
+                    cloudinaryStorageService.deleteFile(oldPublicId);
+                }
             }
-            String newPhotoUrl = fileStorageService.storeProfilePhoto(photoFile);
+            // CHANGÉ: utilisation de uploadImage()
+            String newPhotoUrl = cloudinaryStorageService.uploadImage(photoFile, "utilisateur");
             utilisateur.setPhotoUrl(newPhotoUrl);
         }
 
