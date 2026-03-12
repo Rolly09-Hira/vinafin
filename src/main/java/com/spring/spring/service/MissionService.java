@@ -16,7 +16,7 @@ public class MissionService {
     private MissionRepository missionRepository;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private CloudinaryStorageService cloudinaryStorageService; // CHANGÉ
 
     public List<Mission> getAllMissions() {
         return missionRepository.findAll();
@@ -50,8 +50,16 @@ public class MissionService {
         Mission mission = missionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Mission non trouvée avec l'ID: " + id));
 
-        fileStorageService.deleteFile(mission.getIconUrl());
-        fileStorageService.deleteFile(mission.getImageUrl());
+        // Supprimer les fichiers de Cloudinary
+        String iconPublicId = cloudinaryStorageService.extractPublicIdFromUrl(mission.getIconUrl());
+        if (iconPublicId != null) {
+            cloudinaryStorageService.deleteFile(iconPublicId);
+        }
+        
+        String imagePublicId = cloudinaryStorageService.extractPublicIdFromUrl(mission.getImageUrl());
+        if (imagePublicId != null) {
+            cloudinaryStorageService.deleteFile(imagePublicId);
+        }
 
         missionRepository.delete(mission);
     }
@@ -60,15 +68,29 @@ public class MissionService {
         // Gérer l'upload de l'icône
         String iconUrl = mission.getIconUrl();
         if (missionDTO.getIconFile() != null && !missionDTO.getIconFile().isEmpty()) {
-            fileStorageService.deleteFile(iconUrl);
-            iconUrl = fileStorageService.storeFile(missionDTO.getIconFile(), "mission", "image");
+            // Supprimer l'ancienne icône si elle existe
+            if (iconUrl != null && !iconUrl.isEmpty()) {
+                String oldIconPublicId = cloudinaryStorageService.extractPublicIdFromUrl(iconUrl);
+                if (oldIconPublicId != null) {
+                    cloudinaryStorageService.deleteFile(oldIconPublicId);
+                }
+            }
+            // Upload nouvelle icône
+            iconUrl = cloudinaryStorageService.uploadImage(missionDTO.getIconFile(), "mission/icons");
         }
 
         // Gérer l'upload de l'image
         String imageUrl = mission.getImageUrl();
         if (missionDTO.getImageFile() != null && !missionDTO.getImageFile().isEmpty()) {
-            fileStorageService.deleteFile(imageUrl);
-            imageUrl = fileStorageService.storeFile(missionDTO.getImageFile(), "mission", "image");
+            // Supprimer l'ancienne image si elle existe
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                String oldImagePublicId = cloudinaryStorageService.extractPublicIdFromUrl(imageUrl);
+                if (oldImagePublicId != null) {
+                    cloudinaryStorageService.deleteFile(oldImagePublicId);
+                }
+            }
+            // Upload nouvelle image
+            imageUrl = cloudinaryStorageService.uploadImage(missionDTO.getImageFile(), "mission/images");
         }
 
         // Mapper les champs
