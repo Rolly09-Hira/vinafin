@@ -16,7 +16,7 @@ public class TemoignageService {
     private TemoignageRepository temoignageRepository;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private CloudinaryStorageService cloudinaryStorageService; // CHANGÉ
 
     public List<Temoignage> getAllTemoignages() {
         return temoignageRepository.findAll();
@@ -67,8 +67,22 @@ public class TemoignageService {
         Temoignage temoignage = temoignageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Témoignage non trouvé avec l'ID: " + id));
 
-        fileStorageService.deleteFile(temoignage.getPhotoUrl());
-        fileStorageService.deleteFile(temoignage.getVideoUrl());
+        // Supprimer la photo de Cloudinary
+        if (temoignage.getPhotoUrl() != null && !temoignage.getPhotoUrl().isEmpty()) {
+            String photoPublicId = cloudinaryStorageService.extractPublicIdFromUrl(temoignage.getPhotoUrl());
+            if (photoPublicId != null) {
+                cloudinaryStorageService.deleteFile(photoPublicId);
+            }
+        }
+        
+        // Supprimer la vidéo de Cloudinary
+        if (temoignage.getVideoUrl() != null && !temoignage.getVideoUrl().isEmpty()) {
+            String videoPublicId = cloudinaryStorageService.extractPublicIdFromUrl(temoignage.getVideoUrl());
+            if (videoPublicId != null) {
+                cloudinaryStorageService.deleteFile(videoPublicId);
+            }
+        }
+
         temoignageRepository.delete(temoignage);
     }
 
@@ -76,15 +90,29 @@ public class TemoignageService {
         // Gérer l'upload de la photo
         String photoUrl = temoignage.getPhotoUrl();
         if (temoignageDTO.getPhotoFile() != null && !temoignageDTO.getPhotoFile().isEmpty()) {
-            fileStorageService.deleteFile(photoUrl);
-            photoUrl = fileStorageService.storeFile(temoignageDTO.getPhotoFile(), "temoignage", "image");
+            // Supprimer l'ancienne photo
+            if (photoUrl != null && !photoUrl.isEmpty()) {
+                String oldPhotoPublicId = cloudinaryStorageService.extractPublicIdFromUrl(photoUrl);
+                if (oldPhotoPublicId != null) {
+                    cloudinaryStorageService.deleteFile(oldPhotoPublicId);
+                }
+            }
+            // Upload nouvelle photo
+            photoUrl = cloudinaryStorageService.uploadImage(temoignageDTO.getPhotoFile(), "temoignage/photos");
         }
 
         // Gérer l'upload de la vidéo
         String videoUrl = temoignage.getVideoUrl();
         if (temoignageDTO.getVideoFile() != null && !temoignageDTO.getVideoFile().isEmpty()) {
-            fileStorageService.deleteFile(videoUrl);
-            videoUrl = fileStorageService.storeFile(temoignageDTO.getVideoFile(), "temoignage", "video");
+            // Supprimer l'ancienne vidéo
+            if (videoUrl != null && !videoUrl.isEmpty()) {
+                String oldVideoPublicId = cloudinaryStorageService.extractPublicIdFromUrl(videoUrl);
+                if (oldVideoPublicId != null) {
+                    cloudinaryStorageService.deleteFile(oldVideoPublicId);
+                }
+            }
+            // Upload nouvelle vidéo
+            videoUrl = cloudinaryStorageService.uploadVideo(temoignageDTO.getVideoFile(), "temoignage/videos");
         }
 
         // Déterminer automatiquement le type de témoignage
