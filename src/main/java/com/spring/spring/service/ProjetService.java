@@ -18,10 +18,10 @@ public class ProjetService {
     private ProjetRepository projetRepository;
 
     @Autowired
-    private RegionRepository regionRepository;  // 🌟 NOUVEAU
+    private RegionRepository regionRepository;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private CloudinaryStorageService cloudinaryStorageService; // CHANGÉ: plus de FileStorageService
 
     public List<Projet> getAllProjets() {
         return projetRepository.findAll();
@@ -43,8 +43,13 @@ public class ProjetService {
         Projet projet = projetRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Projet non trouvé avec l'ID: " + id));
 
+        // Supprimer l'ancienne image si nouvelle fournie
         if (projetDTO.getImageFile() != null && !projetDTO.getImageFile().isEmpty()) {
-            fileStorageService.deleteFile(projet.getImageUrl());
+            // Extraire le publicId de l'ancienne URL et supprimer
+            String oldPublicId = cloudinaryStorageService.extractPublicIdFromUrl(projet.getImageUrl());
+            if (oldPublicId != null) {
+                cloudinaryStorageService.deleteFile(oldPublicId);
+            }
         }
 
         return saveOrUpdateProjet(projet, projetDTO);
@@ -55,14 +60,21 @@ public class ProjetService {
         Projet projet = projetRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Projet non trouvé avec l'ID: " + id));
 
-        fileStorageService.deleteFile(projet.getImageUrl());
+        // Supprimer l'image de Cloudinary
+        String publicId = cloudinaryStorageService.extractPublicIdFromUrl(projet.getImageUrl());
+        if (publicId != null) {
+            cloudinaryStorageService.deleteFile(publicId);
+        }
+
         projetRepository.delete(projet);
     }
 
     private Projet saveOrUpdateProjet(Projet projet, ProjetRequestDTO projetDTO) {
         String imageUrl = projet.getImageUrl();
+        
+        // Upload nouvelle image si fournie
         if (projetDTO.getImageFile() != null && !projetDTO.getImageFile().isEmpty()) {
-            imageUrl = fileStorageService.storeFile(projetDTO.getImageFile(), "projet", "image");
+            imageUrl = cloudinaryStorageService.uploadImage(projetDTO.getImageFile(), "projet");
         }
 
         projet.setTitreFr(projetDTO.getTitreFr());
