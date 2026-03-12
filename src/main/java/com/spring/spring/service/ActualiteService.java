@@ -16,7 +16,7 @@ public class ActualiteService {
     private ActualiteRepository actualiteRepository;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private CloudinaryStorageService cloudinaryStorageService; // CHANGÉ
 
     public List<Actualite> getAllActualites() {
         return actualiteRepository.findAll();
@@ -52,8 +52,12 @@ public class ActualiteService {
         Actualite actualite = actualiteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Actualité non trouvée avec l'ID: " + id));
 
+        // Supprimer l'ancienne image si nouvelle fournie
         if (actualiteDTO.getImageFile() != null && !actualiteDTO.getImageFile().isEmpty()) {
-            fileStorageService.deleteFile(actualite.getImageUrl());
+            String oldPublicId = cloudinaryStorageService.extractPublicIdFromUrl(actualite.getImageUrl());
+            if (oldPublicId != null) {
+                cloudinaryStorageService.deleteFile(oldPublicId);
+            }
         }
 
         return saveOrUpdateActualite(actualite, actualiteDTO);
@@ -64,15 +68,22 @@ public class ActualiteService {
         Actualite actualite = actualiteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Actualité non trouvée avec l'ID: " + id));
 
-        fileStorageService.deleteFile(actualite.getImageUrl());
+        // Supprimer l'image de Cloudinary
+        String publicId = cloudinaryStorageService.extractPublicIdFromUrl(actualite.getImageUrl());
+        if (publicId != null) {
+            cloudinaryStorageService.deleteFile(publicId);
+        }
+
         actualiteRepository.delete(actualite);
     }
 
     private Actualite saveOrUpdateActualite(Actualite actualite, ActualiteRequestDTO actualiteDTO) {
         String imageUrl = actualite.getImageUrl();
+        
+        // Upload nouvelle image si fournie
         if (actualiteDTO.getImageFile() != null && !actualiteDTO.getImageFile().isEmpty()) {
-            // MODIFICATION ICI : ajout du 3ème paramètre "image"
-            imageUrl = fileStorageService.storeFile(actualiteDTO.getImageFile(), "actualite", "image");
+            // CHANGÉ: utilisation de cloudinaryStorageService.uploadImage()
+            imageUrl = cloudinaryStorageService.uploadImage(actualiteDTO.getImageFile(), "actualite");
         }
 
         actualite.setTitreFr(actualiteDTO.getTitreFr());
