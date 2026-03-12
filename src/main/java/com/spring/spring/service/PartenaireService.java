@@ -16,7 +16,7 @@ public class PartenaireService {
     private PartenaireRepository partenaireRepository;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private CloudinaryStorageService cloudinaryStorageService; // CHANGÉ
 
     public List<Partenaire> getAllPartenaires() {
         return partenaireRepository.findAll();
@@ -38,8 +38,12 @@ public class PartenaireService {
         Partenaire partenaire = partenaireRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Partenaire non trouvé avec l'ID: " + id));
 
+        // Supprimer l'ancien logo si nouveau fourni
         if (partenaireDTO.getLogoFile() != null && !partenaireDTO.getLogoFile().isEmpty()) {
-            fileStorageService.deleteFile(partenaire.getLogoUrl());
+            String oldPublicId = cloudinaryStorageService.extractPublicIdFromUrl(partenaire.getLogoUrl());
+            if (oldPublicId != null) {
+                cloudinaryStorageService.deleteFile(oldPublicId);
+            }
         }
 
         return saveOrUpdatePartenaire(partenaire, partenaireDTO);
@@ -50,15 +54,22 @@ public class PartenaireService {
         Partenaire partenaire = partenaireRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Partenaire non trouvé avec l'ID: " + id));
 
-        fileStorageService.deleteFile(partenaire.getLogoUrl());
+        // Supprimer le logo de Cloudinary
+        String publicId = cloudinaryStorageService.extractPublicIdFromUrl(partenaire.getLogoUrl());
+        if (publicId != null) {
+            cloudinaryStorageService.deleteFile(publicId);
+        }
+
         partenaireRepository.delete(partenaire);
     }
 
     private Partenaire saveOrUpdatePartenaire(Partenaire partenaire, PartenaireRequestDTO partenaireDTO) {
         String logoUrl = partenaire.getLogoUrl();
+        
+        // Upload nouveau logo si fourni
         if (partenaireDTO.getLogoFile() != null && !partenaireDTO.getLogoFile().isEmpty()) {
-            // MODIFICATION ICI : ajout du 3ème paramètre "image"
-            logoUrl = fileStorageService.storeFile(partenaireDTO.getLogoFile(), "partenaire", "image");
+            // CHANGÉ: utilisation de uploadImage()
+            logoUrl = cloudinaryStorageService.uploadImage(partenaireDTO.getLogoFile(), "partenaire");
         }
 
         partenaire.setNom(partenaireDTO.getNom());
