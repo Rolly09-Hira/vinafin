@@ -6,7 +6,6 @@ import com.spring.spring.repository.PersonnelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,7 +17,7 @@ public class PersonnelService {
     private PersonnelRepository personnelRepository;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private CloudinaryStorageService cloudinaryStorageService; // CHANGÉ
 
     // Récupérer tout le personnel
     public List<Personnel> getAllPersonnel() {
@@ -64,7 +63,8 @@ public class PersonnelService {
 
         // Gérer l'upload de la photo si présente
         if (dto.getPhotoFile() != null && !dto.getPhotoFile().isEmpty()) {
-            String photoUrl = fileStorageService.storePersonnelPhoto(dto.getPhotoFile());
+            // CHANGÉ: utilisation de uploadImage() au lieu de storePersonnelPhoto()
+            String photoUrl = cloudinaryStorageService.uploadImage(dto.getPhotoFile(), "personnel");
             personnel.setPhotoUrl(photoUrl);
         }
 
@@ -102,9 +102,13 @@ public class PersonnelService {
         if (dto.getPhotoFile() != null && !dto.getPhotoFile().isEmpty()) {
             // Supprimer l'ancienne photo si elle existe
             if (personnel.getPhotoUrl() != null && !personnel.getPhotoUrl().isEmpty()) {
-                fileStorageService.deleteFile(personnel.getPhotoUrl());
+                String oldPublicId = cloudinaryStorageService.extractPublicIdFromUrl(personnel.getPhotoUrl());
+                if (oldPublicId != null) {
+                    cloudinaryStorageService.deleteFile(oldPublicId);
+                }
             }
-            String newPhotoUrl = fileStorageService.storePersonnelPhoto(dto.getPhotoFile());
+            // CHANGÉ: utilisation de uploadImage()
+            String newPhotoUrl = cloudinaryStorageService.uploadImage(dto.getPhotoFile(), "personnel");
             personnel.setPhotoUrl(newPhotoUrl);
         }
 
@@ -117,9 +121,12 @@ public class PersonnelService {
     public void deletePersonnel(Long id) {
         Personnel personnel = getPersonnelById(id);
 
-        // Supprimer la photo si elle existe
+        // Supprimer la photo de Cloudinary si elle existe
         if (personnel.getPhotoUrl() != null && !personnel.getPhotoUrl().isEmpty()) {
-            fileStorageService.deleteFile(personnel.getPhotoUrl());
+            String publicId = cloudinaryStorageService.extractPublicIdFromUrl(personnel.getPhotoUrl());
+            if (publicId != null) {
+                cloudinaryStorageService.deleteFile(publicId);
+            }
         }
 
         personnelRepository.delete(personnel);
