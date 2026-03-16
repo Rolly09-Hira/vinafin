@@ -5,10 +5,11 @@ import com.spring.spring.entity.DonIntention;
 import com.spring.spring.entity.DonIntention.StatutDon;
 import com.spring.spring.repository.DonIntentionRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +27,10 @@ public class DonIntentionService {
     private DonIntentionRepository donIntentionRepository;
 
     @Autowired
-    private DonIntentionNotificationService notificationService;
+    private EmailBrevoService emailBrevoService;
+
+    @Value("${app.email.team}")
+    private String teamEmail;
 
     // Constantes pour anti-spam
     private static final int MAX_INTENTIONS_PAR_EMAIL_PAR_JOUR = 3;
@@ -78,27 +82,20 @@ public class DonIntentionService {
         // Sauvegarde
         DonIntention savedIntention = donIntentionRepository.save(intention);
 
-        // Envoi des notifications
-        notificationService.envoyerConfirmationDonateur(savedIntention);
-        notificationService.notifierEquipe(savedIntention);
-
-        System.out.println("✅ Intention sauvegardée avec ID: " + savedIntention.getId());
-        
-        // Envoi des notifications avec try-catch explicite
+        // ✅ ENVOI DES EMAILS VIA BREVO
         try {
-            notificationService.envoyerConfirmationDonateur(savedIntention);
-            System.out.println("✅ Email de confirmation envoyé");
+            emailBrevoService.envoyerConfirmationDonateur(savedIntention);
+            System.out.println("✅ Email de confirmation envoyé via Brevo à " + savedIntention.getEmail());
         } catch (Exception e) {
-            System.err.println("❌ ERREUR ENVOI EMAIL: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Erreur envoi confirmation: " + e.getMessage());
+            // Ne pas bloquer le processus - l'intention est déjà sauvegardée
         }
-        
+
         try {
-            notificationService.notifierEquipe(savedIntention);
-            System.out.println("✅ Notification équipe envoyée");
+            emailBrevoService.notifierEquipe(savedIntention, teamEmail);
+            System.out.println("✅ Notification équipe envoyée via Brevo");
         } catch (Exception e) {
-            System.err.println("❌ ERREUR NOTIFICATION EQUIPE: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("❌ Erreur envoi notification équipe: " + e.getMessage());
         }
 
         return new DonIntentionResponseDTO(savedIntention);
@@ -202,9 +199,9 @@ public class DonIntentionService {
         intention.setNotesInternes(nouvellesNotes);
         donIntentionRepository.save(intention);
     }
+
     /**
      * Supprimer une intention de don (admin uniquement)
-     * Seul un administrateur peut supprimer des intentions
      */
     @Transactional
     public void deleteIntention(Long id) {
@@ -221,7 +218,7 @@ public class DonIntentionService {
         DonIntention intention = donIntentionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Intention de don non trouvée avec l'id: " + id));
 
-        // 3. Optionnel : Empêcher la suppression des intentions déjà converties
+        // 3. Empêcher la suppression des intentions déjà converties
         if (DonIntention.StatutDon.CONVERTI.equals(intention.getStatut())) {
             throw new RuntimeException("Impossible de supprimer une intention déjà convertie");
         }
@@ -232,6 +229,7 @@ public class DonIntentionService {
         // 5. Logger l'action
         System.out.println("🗑️ Intention de don supprimée - ID: " + id + " par: " + authentication.getName());
     }
+
     /**
      * Obtenir les statistiques pour le dashboard
      */
