@@ -82,6 +82,25 @@ public class DonIntentionService {
         notificationService.envoyerConfirmationDonateur(savedIntention);
         notificationService.notifierEquipe(savedIntention);
 
+        System.out.println("✅ Intention sauvegardée avec ID: " + savedIntention.getId());
+        
+        // Envoi des notifications avec try-catch explicite
+        try {
+            notificationService.envoyerConfirmationDonateur(savedIntention);
+            System.out.println("✅ Email de confirmation envoyé");
+        } catch (Exception e) {
+            System.err.println("❌ ERREUR ENVOI EMAIL: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        try {
+            notificationService.notifierEquipe(savedIntention);
+            System.out.println("✅ Notification équipe envoyée");
+        } catch (Exception e) {
+            System.err.println("❌ ERREUR NOTIFICATION EQUIPE: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         return new DonIntentionResponseDTO(savedIntention);
     }
 
