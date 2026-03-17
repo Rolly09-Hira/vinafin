@@ -78,11 +78,6 @@
           <artifactId>commons-io</artifactId>
           <version>2.11.0</version>
       </dependency>
-     <!--RESTTEMPLATE -->
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-webflux</artifactId>
-      </dependency>
     </dependencies>
          
 
